@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="css/reset.css">
+    <link rel="stylesheet" href="css/chatkadai.css">
+    <title>Chatkadai</title>
+</head>
+<body>
+    <div>
+        <!-- <div id = "scroller" class = "panel-body">
+            <ul id = "text">
+            </ul>
+        </div> -->
+        <div class="panel-footer">
+            名前: <input type="text" class="from-control" id="uname">
+        </div>
+        <div class="panel-footer">
+            <textarea name="" class="from-control" id="text" cols="30" rows="10" placeholder="メッセージを入力"></textarea>
+            <button id="send">送信</button>
+        </div>
+        <div id="output"></div>
+    </div>
+
+<!-- JQuery -->
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+<!-- JQuery -->
+
+<!-- ここからFirebase -->
+<script type="module">
+    // Import the functions you need from the SDKs you need
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-app.js";
+    // TODO: Add SDKs for Firebase products that you want to use
+    // https://firebase.google.com/docs/web/setup#available-libraries
+    import { getDatabase, ref, push, set, onChildAdded, remove, onChildRemoved }
+        from "https://cdnjs.cloudflare.com/ajax/libs/firebase/9.15.0/firebase-database.js";
+    
+    // Your web app's Firebase configuration
+    const firebaseConfig = {
+      apiKey: ,
+      authDomain: "iwashita-chatkadai.firebaseapp.com",
+      projectId: "iwashita-chatkadai",
+      storageBucket: "iwashita-chatkadai.appspot.com",
+      messagingSenderId: "788869928768",
+      appId: "1:788869928768:web:c0733e8cb02799aa79cca5"
+    };
+  
+    // Initialize Firebase
+    const app = initializeApp(firebaseConfig);
+
+    const db = getDatabase(app); // RealtimeDBに接続
+    const dbRef = ref(db, "chat"); // RealtimeDB内の"chat"を使う
+
+    // スクロール定義
+    function getScrollTop(){
+    $("#output").scrollTop($("#output").get(0).scrollHeight);
+}
+   
+
+    // データ送信機能実装
+    $("#send").on("click", function () {
+    const msg = {
+        uname: $("#uname").val(),
+        text: $("#text").val()
+    }
+    const newPostRef = push(dbRef); // pushできる状態にする
+    set(newPostRef, msg); // DBに値を送信
+    getScrollTop()
+});
+    
+
+    // ENTERキーで送信
+    $("#text").on("keydown", function (e) {
+            console.log(e.keyCode);
+            if(e.keyCode === 13) {
+                const msg = {
+                uname: $("#uname").val(),
+                text: $("#text").val()
+            };
+            const newPostRef = push(dbRef);
+            console.log(newPostRef);
+            set(newPostRef, msg);
+
+            getScrollTop()
+            // $("#output").scrollTop($("#text").height());
+            }
+        })
+
+    // データ受信機能の実装
+    onChildAdded(dbRef, function (data) {
+    const msg = data.val();
+    const key = data.key;
+    
+    // メッセージを左右に分けて表示
+    let h = "";
+    if (msg.uname == $("#uname").val()) {
+        h = `<li> 
+            <p class = "sender_name_me">${msg.uname}</p>
+            <p class = "right_balloon">${msg.text}</p>
+            <p id = "${key}" class = "delete_button_right">×</p>
+            <p class = "clear_balloon"></p>
+            </li>`
+        }else {
+        h = `<li> 
+            <p class = "sender_name">${msg.uname}</p>
+            <p class = "left_balloon">${msg.text}</p>
+            <p id = "${key}" class = "delete_button_left">×</p>
+            <p class = "clear_balloon"></p>
+            </li>`
+        };
+        console.log(h);
+
+    $("#output").append(h); // #output の最後に追加
+
+    getScrollTop()
+    // $("#output")[0].scrollTop = $("#output")[0].scrollHeight;
+});
+
+// function getScrollTop(){
+//   $("#output").text($(window).scrollTop() + 'px');
+// }
+// $(window).on("load scroll", getScrollTop);
+
+// function getScrollTop(){
+//     $("#output").scrollTop($("#output").get(0).scrollHeight);
+// }
+// $(window).on("load scroll resize", getScrollTop);
+
+// 削除キーの挙動させるコード
+$(document).on("click", ".delete_button_right", function(){
+    let value = $(this).attr("id");
+    const dbRefdel = ref(db, `chat/${value}`)
+    remove(dbRefdel);
+    $(this).parent().remove();
+})
+$(document).on("click", ".delete_button_left", function(){
+    let value = $(this).attr("id");
+    const dbRefdel = ref(db, `chat/${value}`)
+    remove(dbRefdel);
+    $(this).parent().remove();
+})
+
+  </script>
+
+
+
+
+  <!-- </script> -->
+</body>
+</html>
